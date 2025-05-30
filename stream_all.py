@@ -6,33 +6,50 @@ import pandas as pd
 # تنظیمات صفحه
 st.set_page_config(page_title="محاسبه پارامترهای قوس", layout="wide")
 
-# تنظیم راست‌چین برای پشتیبانی از فارسی و عرض منوی کشویی
+# تنظیم راست‌چین و اسکرول افقی برای جداول + استایل لوگوها و پلات
 st.markdown("""
 <style>
-body {
+body, .stText, .stNumberInput, .stSelectbox, .stButton, .stDataFrame, .stSubheader, .stWrite {
     direction: rtl;
     text-align: right;
 }
 .stSelectbox > div > div > div {
     max-width: 200px;
 }
+.stDataFrame, .stTable {
+    direction: rtl;
+}
+.stDataFrame table, .stTable table {
+    direction: rtl;
+    width: 100%;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+.stDataFrame th, .stDataFrame td, .stTable th, .stTable td {
+    text-align: right !important;
+    unicode-bidi: embed;
+}
+
+
 </style>
 """, unsafe_allow_html=True)
 
 # تابع محاسبه جدول پیاده‌سازی
+
+
 def calculate_implementation_table(stations, segments):
     impl_data = []
     for i in range(len(stations) - 1):
         stn_prev = stations[i]
         stn_curr = stations[i + 1]
         delta = stn_curr - stn_prev
-        # یافتن قطعه‌ای که این بازه در آن قرار دارد
         for seg in segments:
             seg_start, seg_end, R = seg
             if stn_prev >= seg_start and stn_curr <= seg_end:
-                delta_theta = delta / R  # زاویه انحراف به رادیان
-                delta_theta_deg = math.degrees(delta_theta)  # تبدیل به درجه
-                chord = 2 * R * math.sin(delta_theta / 2)  # طول وتر
+                delta_theta = delta / R
+                delta_theta_deg = math.degrees(delta_theta)
+                chord = 2 * R * math.sin(delta_theta / 2)
                 impl_data.append((
                     round(stn_prev, 3),
                     round(stn_curr, 3),
@@ -44,6 +61,8 @@ def calculate_implementation_table(stations, segments):
     return pd.DataFrame(impl_data, columns=["از ایستگاه", "تا ایستگاه", "فاصله (m)", "زاویه انحراف (°)", "طول وتر (m)"])
 
 # تابع محاسبات برای قوس ساده
+
+
 def calculate_simple_curve(R, D_deg, KP, interval):
     D = math.radians(D_deg)
     L = R * D
@@ -88,6 +107,8 @@ def calculate_simple_curve(R, D_deg, KP, interval):
     return {"params": params, "station_data": station_data, "plot_data": plot_data, "impl_table": impl_table, "error": None}
 
 # تابع محاسبات برای قوس مرکب
+
+
 def calculate_compound_curve(KP, R1, D1_deg, R2, D2_deg, interval):
     D1 = math.radians(D1_deg)
     D2 = math.radians(D2_deg)
@@ -149,6 +170,8 @@ def calculate_compound_curve(KP, R1, D1_deg, R2, D2_deg, interval):
     return {"params": params, "station_data": station_data, "plot_data": plot_data, "impl_table": impl_table, "error": None}
 
 # تابع محاسبات برای قوس معکوس
+
+
 def calculate_reverse_curve(R, p, KP0, dKP):
     if p >= 2 * R:
         return {"params": None, "station_data": None, "plot_data": None, "impl_table": None, "error": "مقدار p باید کمتر از 2R باشد."}
@@ -198,8 +221,10 @@ def calculate_reverse_curve(R, p, KP0, dKP):
     return {"params": params, "station_data": station_data, "plot_data": plot_data, "impl_table": impl_table, "error": None}
 
 # تابع ترسیم برای قوس ساده
+
+
 def plot_simple_curve(plot_data):
-    fig, ax = plt.subplots(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(7, 7))
     R = plot_data["R"]
     D = plot_data["D"]
     D_deg = plot_data["D_deg"]
@@ -222,8 +247,10 @@ def plot_simple_curve(plot_data):
     t_int = -y_pt / dir_pt[1]
     int_x = x_pt + t_int * dir_pt[0]
     int_y = 0
-    ax.plot([int_x, x_pc], [int_y, y_pc], color=tangent_color, linestyle='--', lw=2, label='Tangent')
-    ax.plot([int_x, x_pt], [int_y, y_pt], color=tangent_color, linestyle='--', lw=2)
+    ax.plot([int_x, x_pc], [int_y, y_pc], color=tangent_color,
+            linestyle='--', lw=2, label='Tangent')
+    ax.plot([int_x, x_pt], [int_y, y_pt],
+            color=tangent_color, linestyle='--', lw=2)
     ax.plot([cx, x_pc], [cy, y_pc], color=radius_color, lw=2, label='Radius')
     ax.plot([cx, x_pt], [cy, y_pt], color=radius_color, lw=2)
     start_ang = -(math.pi/2 - D)
@@ -234,7 +261,8 @@ def plot_simple_curve(plot_data):
     cy_arc = [cy + center_r*math.sin(th) for th in theta_c]
     ax.plot(cx_arc, cy_arc, color='green', linestyle='--', lw=2)
     mid_ang = (start_ang + end_ang) / 2
-    ax.text(cx + (center_r+R*0.02)*math.cos(mid_ang), cy + (center_r+R*0.02)*math.sin(mid_ang), f"Δ={round(D_deg, 2)}°", color='green', fontsize=12, fontweight='bold')
+    ax.text(cx + (center_r+R*0.02)*math.cos(mid_ang), cy + (center_r+R*0.02)*math.sin(mid_ang),
+            f"Δ={round(D_deg, 2)}°", color='green', fontsize=12, fontweight='bold')
     for stn in stations:
         frac = (stn - A) / L * D
         xs_s = R * math.sin(frac)
@@ -242,8 +270,10 @@ def plot_simple_curve(plot_data):
         ax.plot(xs_s, ys_s, 'ko')
         ax.text(xs_s, ys_s, f"{round(stn, 1)}", fontsize=8)
     ax.text(cx + R*0.1, cy - R*0.1, f"R={R}", fontsize=10, color=radius_color)
-    ax.text((int_x+x_pc)/2, (int_y+y_pc)/2 - R*0.02, f"T={round(T, 3)}", fontsize=10, color=tangent_color)
-    ax.text((int_x+x_pt)/2 + dir_pt[0]*0.02, (int_y+y_pt)/2 + dir_pt[1]*0.02, f"T={round(T, 3)}", fontsize=10, color=tangent_color)
+    ax.text((int_x+x_pc)/2, (int_y+y_pc)/2 - R*0.02,
+            f"T={round(T, 3)}", fontsize=10, color=tangent_color)
+    ax.text((int_x+x_pt)/2 + dir_pt[0]*0.02, (int_y+y_pt)/2 + dir_pt[1]
+            * 0.02, f"T={round(T, 3)}", fontsize=10, color=tangent_color)
     ax.set_aspect('equal')
     ax.set_title('Simple Curve', fontsize=14)
     ax.set_xlabel('X (m)')
@@ -252,6 +282,8 @@ def plot_simple_curve(plot_data):
     return fig
 
 # تابع ترسیم برای قوس مرکب
+
+
 def plot_compound_curve(plot_data):
     fig, ax = plt.subplots(figsize=(8, 8))
     R1 = plot_data["R1"]
@@ -297,7 +329,8 @@ def plot_compound_curve(plot_data):
     ay1 = [cy1 + (R1/6)*math.sin(a) for a in arc1]
     ax.plot(ax1, ay1, 'g')
     ma1 = (a1 + b1)/2
-    ax.text(cx1 + (R1/6 + 10)*math.cos(ma1), cy1 + (R1/6 + 10)*math.sin(ma1), f"Δ1={D1_deg}°", color='green')
+    ax.text(cx1 + (R1/6 + 10)*math.cos(ma1), cy1 + (R1/6 + 10)
+            * math.sin(ma1), f"Δ1={D1_deg}°", color='green')
     a2 = start_ang
     b2 = math.atan2(tpy - cy2, tpx - cx2)
     if b2 < a2:
@@ -307,7 +340,8 @@ def plot_compound_curve(plot_data):
     ay2 = [cy2 + (R2/6)*math.sin(a) for a in arc2]
     ax.plot(ax2, ay2, 'm')
     ma2 = (a2 + b2)/2
-    ax.text(cx2 + (R2/6 + 10)*math.cos(ma2), cy2 + (R2/6 + 10)*math.sin(ma2), f"Δ2={D2_deg}°", color='purple')
+    ax.text(cx2 + (R2/6 + 10)*math.cos(ma2), cy2 + (R2/6 + 10)
+            * math.sin(ma2), f"Δ2={D2_deg}°", color='purple')
     for s in stations:
         frac = (s - A)/(L1 + L2)*(D1 + D2)
         if frac <= D1:
@@ -327,8 +361,10 @@ def plot_compound_curve(plot_data):
     return fig
 
 # تابع ترسیم برای قوس معکوس
+
+
 def plot_reverse_curve(plot_data):
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(5, 5))
     R = plot_data["R"]
     p = plot_data["p"]
     KP0 = plot_data["KP0"]
@@ -342,8 +378,10 @@ def plot_reverse_curve(plot_data):
     top_tan = 0
     bot_tan = -p
     xmax = KP0 + L_tot + R / 5
-    ax.plot([KP0 - R / 5, xmax], [top_tan, top_tan], '--', lw=1.2, color='orange')
-    ax.plot([KP0 - R / 5, xmax], [bot_tan, bot_tan], '--', lw=1.2, color='orange')
+    ax.plot([KP0 - R / 5, xmax], [top_tan, top_tan],
+            '--', lw=1.2, color='orange')
+    ax.plot([KP0 - R / 5, xmax], [bot_tan, bot_tan],
+            '--', lw=1.2, color='orange')
     T1 = (KP0, top_tan)
     T2 = (KP0 + 2 * R * math.sin(theta), bot_tan)
     ax.plot(*T1, 'rs', ms=6)
@@ -367,6 +405,8 @@ def plot_reverse_curve(plot_data):
     ax.plot(x1, y1, '-b', lw=2)
     th2_start = 3 * math.pi / 2 - theta
     th2_end = 3 * math.pi / 2
+    th2_start = 3 * math.pi / 2 - theta
+    th2_end = 3 * math.pi / 2
     thetas2 = [th2_start + (th2_end - th2_start) * i / 200 for i in range(201)]
     x2 = [O2[0] + R * math.cos(t) for t in thetas2]
     y2 = [O2[1] + R * math.sin(t) for t in thetas2]
@@ -385,12 +425,14 @@ def plot_reverse_curve(plot_data):
             xs = O2[0] + R * math.cos(t)
             ys = O2[1] + R * math.sin(t)
         ax.plot(xs, ys, 'k.', ms=5)
-        ax.text(xs, ys, f"{int(round(s, 0))}", fontsize=8, ha='center', va='bottom')
+        ax.text(xs, ys, f"{int(round(s, 0))}",
+                fontsize=5, ha='center', va='bottom')
     t_pi = math.pi / 2 - theta
     x_pi = O1[0] + R * math.cos(t_pi)
     y_pi = O1[1] + R * math.sin(t_pi)
     ax.plot(x_pi, y_pi, 'ro', ms=8)
-    ax.text(x_pi, y_pi, ' PI', color='red', fontsize=10, va='bottom', ha='left')
+    ax.text(x_pi, y_pi, ' PI', color='red',
+            fontsize=10, va='bottom', ha='left')
     ax.set_aspect('equal')
     ax.set_title("Reverse Curve", fontsize=14)
     ax.set_xlabel('X (m)')
@@ -398,72 +440,82 @@ def plot_reverse_curve(plot_data):
     ax.legend()
     return fig
 
+
 # برنامه اصلی
 st.title("محاسبه پارامترهای قوس")
 
 # منوی کشویی در مرکز
 col1, col2, col3 = st.columns([1.5, 1, 1.5])
 with col2:
-    curve_type = st.selectbox("انتخاب نوع قوس", ["قوس ساده", "قوس مرکب", "قوس معکوس"])
+    curve_type = st.selectbox(
+        "انتخاب نوع قوس", ["قوس ساده", "قوس مرکب", "قوس معکوس"])
 
 # ورودی‌ها بر اساس نوع قوس
-if curve_type == "قوس ساده":
-    R = st.number_input("شعاع قوس (R) [m]", value=100.0)
-    D_deg = st.number_input("زاویه انحراف (D) [°]", value=65.0)
-    KP = st.number_input("کیلومتر راس قوس (KP) [m]", value=1320.15)
-    interval = st.number_input("فاصله بین ایستگاه‌ها [m]", value=30.0)
-elif curve_type == "قوس مرکب":
-    KP = st.number_input("کیلومتر راس قوس (KP) [m]", value=1187.939)
-    R1 = st.number_input("شعاع قوس اول (R1) [m]", value=200.0)
-    D1_deg = st.number_input("زاویه انحراف اول (D1) [°]", value=30.0)
-    R2 = st.number_input("شعاع قوس دوم (R2) [m]", value=300.0)
-    D2_deg = st.number_input("زاویه انحراف دوم (D2) [°]", value=40.0)
-    interval = st.number_input("فاصله بین ایستگاه‌ها [m]", value=50.0)
-elif curve_type == "قوس معکوس":
-    R = st.number_input("شعاع قوس R [m]", value=200.0)
-    p = st.number_input("فاصله بین مماس‌ها p [m]", value=50.0)
-    KP0 = st.number_input("KP شروع [m]", value=1000.0)
-    dKP = st.number_input("فاصله ایستگاه‌ها [m]", value=30.0)
+_, input_col, _ = st.columns([0.1, 0.8, 0.1])
+with input_col:
+    if curve_type == "قوس ساده":
+        R = st.number_input("شعاع قوس (R) [m]", value=100.0)
+        D_deg = st.number_input("زاویه انحراف (D) [°]", value=65.0)
+        KP = st.number_input("کیلومتر راس قوس (KP) [m]", value=1320.15)
+        interval = st.number_input("فاصله بین ایستگاه‌ها [m]", value=30.0)
+    elif curve_type == "قوس مرکب":
+        KP = st.number_input("کیلومتر راس قوس (KP) [m]", value=1187.939)
+        R1 = st.number_input("شعاع قوس اول (R1) [m]", value=200.0)
+        D1_deg = st.number_input("زاویه انحراف اول (D1) [°]", value=30.0)
+        R2 = st.number_input("شعاع قوس دوم (R2) [m]", value=300.0)
+        D2_deg = st.number_input("زاویه انحراف دوم (D2) [°]", value=40.0)
+        interval = st.number_input("فاصله بین ایستگاه‌ها [m]", value=50.0)
+    elif curve_type == "قوس معکوس":
+        R = st.number_input("شعاع قوس R [m]", value=200.0)
+        p = st.number_input("فاصله بین مماس‌ها p [m]", value=50.0)
+        KP0 = st.number_input("KP شروع [m]", value=1000.0)
+        dKP = st.number_input("فاصله ایستگاه‌ها [m]", value=30.0)
 
 # دکمه محاسبه
-if st.button("محاسبه"):
-    try:
-        if curve_type == "قوس ساده":
-            result = calculate_simple_curve(R, D_deg, KP, interval)
-        elif curve_type == "قوس مرکب":
-            result = calculate_compound_curve(KP, R1, D1_deg, R2, D2_deg, interval)
-        elif curve_type == "قوس معکوس":
-            result = calculate_reverse_curve(R, p, KP0, dKP)
-
-        if result['error'] is not None:
-            st.error(result['error'])
-        else:
-            # نمایش پارامترها
-            params_df = pd.DataFrame(list(result['params'].items()), columns=["پارامتر", "مقدار"])
-            st.subheader("پارامترهای محاسبه شده")
-            st.dataframe(params_df, use_container_width=True)
-
-            # نمایش ایستگاه‌ها
-            station_df = pd.DataFrame(result['station_data'], columns=["کیلومتراژ (متر)", "فاصله از ایستگاه قبلی (متر)"])
-            st.subheader("ایستگاه‌ها")
-            st.dataframe(station_df, use_container_width=True)
-
-            # نمایش جدول پیاده‌سازی
-            st.subheader("جدول پیاده‌سازی")
-            st.dataframe(result['impl_table'], use_container_width=True)
-
-            # نمایش نمودار
+_, button_col, _ = st.columns([0.1, 0.8, 0.1])
+with button_col:
+    if st.button("محاسبه"):
+        try:
             if curve_type == "قوس ساده":
-                fig = plot_simple_curve(result['plot_data'])
+                result = calculate_simple_curve(R, D_deg, KP, interval)
             elif curve_type == "قوس مرکب":
-                fig = plot_compound_curve(result['plot_data'])
+                result = calculate_compound_curve(
+                    KP, R1, D1_deg, R2, D2_deg, interval)
             elif curve_type == "قوس معکوس":
-                fig = plot_reverse_curve(result['plot_data'])
-            st.subheader("نمودار قوس")
-            st.pyplot(fig)
-    except ValueError:
-        st.error("لطفاً مقادیر معتبر وارد کنید.")
+                result = calculate_reverse_curve(R, p, KP0, dKP)
 
-# پاورقی
-st.write("---")
-st.write("محمد عرفان حمزه‌ای (810301090)")
+            if result['error'] is not None:
+                st.error(result['error'])
+            else:
+                # نمایش پارامترها
+                _, content_col, _ = st.columns([0.1, 0.8, 0.1])
+                with content_col:
+                    params_df = pd.DataFrame(
+                        list(result['params'].items()), columns=["پارامتر", "مقدار"])
+                    st.subheader("پارامترهای محاسبه شده")
+                    st.dataframe(
+                        params_df, use_container_width=True, hide_index=True)
+
+                    # نمایش ایستگاه‌ها
+                    station_df = pd.DataFrame(result['station_data'], columns=[
+                                              "کیلومتراژ (متر)", "فاصله از ایستگاه قبلی (متر)"])
+                    st.subheader("ایستگاه‌ها")
+                    st.dataframe(
+                        station_df, use_container_width=True, hide_index=True)
+
+                    # نمایش جدول پیاده‌سازی
+                    st.subheader("جدول پیاده‌سازی")
+                    st.dataframe(result['impl_table'],
+                                 use_container_width=True, hide_index=True)
+
+                    # نمایش نمودار
+                    st.subheader("نمودار قوس")
+                    if curve_type == "قوس ساده":
+                        fig = plot_simple_curve(result['plot_data'])
+                    elif curve_type == "قوس مرکب":
+                        fig = plot_compound_curve(result['plot_data'])
+                    elif curve_type == "قوس معکوس":
+                        fig = plot_reverse_curve(result['plot_data'])
+                    st.pyplot(fig)
+        except ValueError:
+            st.error("لطفاً مقادیر معتبر وارد کنید.")
