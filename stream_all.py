@@ -6,6 +6,7 @@ import pandas as pd
 # تنظیمات صفحه
 st.set_page_config(page_title="محاسبه پارامترهای قوس", layout="wide")
 
+
 # تنظیم راست‌چین و اسکرول افقی برای جداول + استایل لوگوها و پلات
 st.markdown("""
 <style>
@@ -16,22 +17,52 @@ body, .stText, .stNumberInput, .stSelectbox, .stButton, .stDataFrame, .stSubhead
 .stSelectbox > div > div > div {
     max-width: 200px;
 }
-.stDataFrame, .stTable {
-    direction: rtl;
-}
-.stDataFrame table, .stTable table {
+.stDataFrame {
     direction: rtl;
     width: 100%;
-    display: block;
     overflow-x: auto;
-    white-space: nowrap;
+    display: block;
 }
-.stDataFrame th, .stDataFrame td, .stTable th, .stTable td {
+.stDataFrame table {
+    direction: rtl;
+    width: 100%;
+    min-width: 500px; /* حداقل عرض برای فعال شدن اسکرول */
+    white-space: nowrap;
+    border-collapse: collapse;
+}
+.stDataFrame th, .stDataFrame td {
     text-align: right !important;
     unicode-bidi: embed;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
 }
+.stDataFrame th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+.logos {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    width: 100%;
+    flex-wrap: nowrap;
+}
+.logos img {
+    width: 100px;
+    height: auto;
+}
+@media (max-width: 600px) {
 
-
+    .stDataFrame table {
+        min-width: 400px; /* حداقل عرض کمتر برای موبایل */
+    }
+    .stDataFrame th, .stDataFrame td {
+        padding: 8px;
+        font-size: 12px;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -134,8 +165,8 @@ def calculate_compound_curve(KP, R1, D1_deg, R2, D2_deg, interval):
         "T1 (m)": round(T1, 3),
         "T2 (m)": round(T2, 3),
         "T مشترک (m)": round(T_shared, 3),
-        "مسیر ورودی (m)": round(T_in, 3),
-        "مسیر خروجی (m)": round(T_out, 3)
+        "T_in مماس ورودی [m]": round(T_in, 3),
+        "t_out مماس خروجی [m]": round(T_out, 3)
     }
     stations = [A]
     first = math.ceil(A / interval) * interval
