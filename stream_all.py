@@ -20,7 +20,6 @@ body, .stText, .stNumberInput, .stSelectbox, .stButton, .stDataFrame, .stSubhead
 .stDataFrame {
     direction: rtl;
     width: 100%;
-    overflow-x: auto;
     display: block;
 }
 .stDataFrame table {
@@ -30,38 +29,22 @@ body, .stText, .stNumberInput, .stSelectbox, .stButton, .stDataFrame, .stSubhead
     white-space: nowrap;
     border-collapse: collapse;
 }
-.stDataFrame th, .stDataFrame td {
-    text-align: right !important;
+/* انتخابگر قوی‌تر برای هدرها و سلول‌ها */
+[data-testid="stTable"] th, [data-testid="stTable"] td {
+    text-align: center !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
     unicode-bidi: embed;
     padding: 10px;
     border: 1px solid #e0e0e0;
     font-size: 14px;
 }
-.stDataFrame th {
+[data-testid="stTable"] th {
     background-color: #f5f5f5;
     font-weight: bold;
 }
-.logos {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    width: 100%;
-    flex-wrap: nowrap;
-}
-.logos img {
-    width: 100px;
-    height: auto;
-}
-@media (max-width: 600px) {
 
-    .stDataFrame table {
-        min-width: 400px; /* حداقل عرض کمتر برای موبایل */
-    }
-    .stDataFrame th, .stDataFrame td {
-        padding: 8px;
-        font-size: 12px;
-    }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -153,20 +136,20 @@ def calculate_compound_curve(KP, R1, D1_deg, R2, D2_deg, interval):
     A = KP - T_in
     B = A + L1 + L2
     params = {
-        "KP رأس": KP,
-        "KP شروع (A)": round(A, 3),
-        "L1 (m)": round(L1, 3),
-        "L2 (m)": round(L2, 3),
-        "L کل (m)": round(L1 + L2, 3),
-        "Δ1 (°)": D1_deg,
-        "Δ2 (°)": D2_deg,
-        "Δ کل (°)": round(D1_deg + D2_deg, 3),
-        "KP پایان (B)": round(B, 3),
-        "T1 (m)": round(T1, 3),
-        "T2 (m)": round(T2, 3),
-        "T مشترک (m)": round(T_shared, 3),
-        "T_in مماس ورودی [m]": round(T_in, 3),
-        "t_out مماس خروجی [m]": round(T_out, 3)
+        "کیلومتراژ راس (KP)": KP,
+        "کیلومتراژ نقطه شروع (KA)": round(A, 3),
+        "کیلومتراژ نقطه پایان (KB)": round(B, 3),
+        "طول قوس اول (L1)": round(L1, 3),
+        "طول قوس دوم (L2)": round(L2, 3),
+        "طول کل قوس": round(L1 + L2, 3),
+        "زاویه انحراف قوس اول (Δ1°)": D1_deg,
+        "زاویه انحراف قوس دوم (Δ2°)": D2_deg,
+        "زاویه انحراف کل قوس": round(D1_deg + D2_deg, 3),
+        "طول مماس قوس اول (T1)": round(T1, 3),
+        "طول مماس قوس دوم (T2)": round(T2, 3),
+        "طول مماس مشترک": round(T_shared, 3),
+        "طول مماس ورودی (T_in)": round(T_in, 3),
+        "طول مماس خروجی (T_out)": round(T_out, 3)
     }
     stations = [A]
     first = math.ceil(A / interval) * interval
@@ -212,13 +195,14 @@ def calculate_reverse_curve(R, p, KP0, dKP):
     chord = 2 * R * math.sin(theta / 2)
     KP_end = KP0 + L_tot
     params = {
-        "θ (°)": round(math.degrees(theta / 2), 3),
-        "2θ (°)": round(math.degrees(theta), 3),
-        "L هر قوس [m]": round(L1, 3),
-        "L کل [m]": round(L_tot, 3),
-        "C وتر هر قوس [m]": round(chord, 3),
-        "KP شروع [m]": round(KP0, 3),
-        "KP پایان [m]": round(KP_end, 3),
+        "زاویه θ (°)": round(math.degrees(theta/2), 3),
+        "زاویه 2θ (°)": round(math.degrees(theta), 3),
+        "طول هر قوس (L)": round(L1, 3),
+        "طول کل قوس": round(L_tot, 3),
+        "طول وتر هر قوس (C)": round(chord, 3),
+        "کیلومتراژ شروع (KA)": round(KP0, 3),
+        "کیلومتراژ نقطه PI": round(KP0 + L1, 3),
+        "کیلومتراژ پایان (KB)": round(KP_end, 3),
     }
     stations = [KP0]
     first = math.ceil(KP0 / dKP) * dKP
@@ -497,10 +481,10 @@ with input_col:
         D2_deg = st.number_input("زاویه انحراف دوم (D2) [°]", value=40.0)
         interval = st.number_input("فاصله بین ایستگاه‌ها [m]", value=50.0)
     elif curve_type == "قوس معکوس":
-        R = st.number_input("شعاع قوس R [m]", value=200.0)
-        p = st.number_input("فاصله بین مماس‌ها p [m]", value=50.0)
-        KP0 = st.number_input("KP شروع [m]", value=1000.0)
-        dKP = st.number_input("فاصله ایستگاه‌ها [m]", value=30.0)
+        R = st.number_input("شعاع قوس (R) [m]", value=200.0)
+        p = st.number_input("فاصله بین مماس ها (P) [m]", value=50.0)
+        KP0 = st.number_input("کیلومتراژ شروع (KA) [m]", value=1000.0)
+        dKP = st.number_input("فاصله ایستگاه ها [m]", value=30.0)
 
 # دکمه محاسبه
 _, button_col, _ = st.columns([0.1, 0.8, 0.1])
